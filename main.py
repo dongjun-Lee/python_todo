@@ -83,7 +83,25 @@ class ListView(Frame):
         self.draw_list()
 
     def on_double_clicked(self, event):
+        clicked_item = self.treeview.focus()
+        clicked_values = self.treeview.item(clicked_item).get('values')
+        clicked_list = map(lambda x: str(x), clicked_values)
+        print clicked_list
+        print "self.todo_list = "
+        print self.todo_list
+        for todo in self.todo_list:
+            print "todo = "
+            print todo.to_list()
+            if clicked_list == todo.to_list():
+                print "here!!!"
+                self.todo_list.remove(todo)
+        FileHandler.save_todo_list(self.todo_list)
+        self.draw_list()
 
+
+
+
+        """
         item = self.treeview.identify('item', event.x, event.y)
         print("row = " + self.treeview.identify_row(event.y))
         print("element = " + self.treeview.identify_element(event.x, event.y))
@@ -99,6 +117,7 @@ class ListView(Frame):
         print "iid = " + iid
         # print "selection set = " + self.treeview.selection_set(iid)
         print type(self.treeview.selection_set(iid))
+        """
 
 
 class App(Frame):
