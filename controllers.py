@@ -24,11 +24,12 @@ class FileHandler:
 
         line = todo_file.readline()
         while line:
+            line = line.rstrip()
             date = line.split(Todo.DIVIDER)[0]
             start_time = line.split(Todo.DIVIDER)[1]
             end_time = line.split(Todo.DIVIDER)[2]
             content = line.split(Todo.DIVIDER)[3]
-            priority = line.rstrip().split(Todo.DIVIDER)[4]
+            priority = line.split(Todo.DIVIDER)[4]
 
             todo = Todo(date=date, start_time=start_time, end_time=end_time, content=content, priority=priority)
             todo_list.append(todo)
