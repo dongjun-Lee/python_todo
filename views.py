@@ -5,9 +5,60 @@ from controllers import *
 from models import *
 import operator
 import tkMessageBox
+import calendar
 
 
 list_view = None
+calendar_view = None
+
+
+class App(Frame):
+    def __init__(self, master):
+        # create a frame with the title and size
+        self.master = master
+        master.title("TODO Application")
+        frame = Frame(master)
+        frame.pack()
+
+
+        global list_view, calendar_view
+        list_view = ListView(self.master)
+        calendar_view = CalendarView(self.master)
+
+        # create a pulldown menu, and add it to the menu bar
+        menu_bar = Menu(master)
+        menu = Menu(menu_bar, tearoff=0)
+        menu.add_command(label="List View", command=self.open_list_view)
+        menu.add_command(label="Calendar View", command=self.open_calendar_view)
+        menu_bar.add_cascade(label="Menu", menu=menu)
+
+        # display the menu
+        master.config(menu=menu_bar)
+
+        # Add TODO button
+        Button(master, text="Add TODO", command=self.add_todo_callback).pack(side=BOTTOM)
+
+        self.is_list_view = False
+        self.open_list_view()
+
+
+    def open_list_view(self):
+        global list_view, calendar_view
+        list_view.show_list_view()
+        calendar_view.hide_calendar_view()
+
+    def open_calendar_view(self):
+        #if self.is_list_view:
+        global list_view, calendar_view
+        list_view.hide_list_view()
+        calendar_view.show_calendar_view()
+
+        # TODO : draw calendar
+        #    self.is_list_view = False
+        pass
+
+    def add_todo_callback(self):
+        InputDialog(self.master)
 
 
 class InputDialog(tkSimpleDialog.Dialog):
@@ -45,44 +96,6 @@ class InputDialog(tkSimpleDialog.Dialog):
         list_view.load_list()
 
 
-class App(Frame):
-    def __init__(self, master):
-        # create a frame with the title and size
-        self.master = master
-        master.title("TODO Application")
-        frame = Frame(master)
-        frame.pack()
-
-        # create a pulldown menu, and add it to the menu bar
-        menu_bar = Menu(master)
-        menu = Menu(menu_bar, tearoff=0)
-        menu.add_command(label="List View", command=self.open_list_view)
-        menu.add_command(label="Calendar View", command=self.open_calendar_view)
-        menu_bar.add_cascade(label="Menu", menu=menu)
-
-        # display the menu
-        master.config(menu=menu_bar)
-
-        # Add TODO button
-        Button(master, text="Add TODO", command=self.add_todo_callback).pack(side=TOP)
-
-        self.is_list_view = False
-        self.open_list_view()
-
-    def open_list_view(self):
-        if not self.is_list_view:
-            global list_view
-            list_view = ListView(self.master)
-            self.is_list_view = True
-
-    def open_calendar_view(self):
-        # TODO
-        pass
-
-    def add_todo_callback(self):
-        InputDialog(self.master)
-
-
 class ListView(Frame):
     def __init__(self, master):
         self.treeview = Treeview(master)
@@ -104,7 +117,6 @@ class ListView(Frame):
         self.treeview.heading('content', text='Content')
         self.treeview.column('priority', anchor='center', width=50)
         self.treeview.heading('priority', text='Priority', command=lambda: self.sort_list('priority'))
-        self.treeview.pack()
 
         self.treeview.bind("<Double-1>", self.on_double_clicked)
 
@@ -135,3 +147,104 @@ class ListView(Frame):
             self.draw_list()
         else:
             pass
+
+    def hide_list_view(self):
+        self.treeview.pack_forget()
+
+    def show_list_view(self):
+        self.treeview.pack()
+
+
+class CalendarView(Frame):
+    def __init__(self, master):
+        self.treeview = Treeview(master, padding=6)
+        self.master = master
+        self.create_gui()
+        self.load_list()
+        self.draw_calendar(2016, 1)
+
+    def create_gui(self):
+        self.treeview['columns'] = ("mon", 'tue', 'wed', 'thur', 'fri', 'sat', 'sun')
+        self.treeview['show'] = 'headings'
+
+        self.treeview.column("mon", anchor='center', width=70)
+        self.treeview.heading("mon", text='Mon')
+        self.treeview.column("tue", anchor='center', width=70)
+        self.treeview.heading("tue", text='Tue')
+        self.treeview.column("wed", anchor='center', width=70)
+        self.treeview.heading("wed", text='Wed')
+        self.treeview.column("thur", anchor='center', width=70)
+        self.treeview.heading("thur", text='Thur')
+        self.treeview.column("fri", anchor='center', width=70)
+        self.treeview.heading("fri", text='Fri')
+        self.treeview.column("sat", anchor='center', width=70)
+        self.treeview.heading("sat", text='Sat')
+        self.treeview.column("sun", anchor='center', width=70)
+        self.treeview.heading("sun", text='Sun')
+
+        self.treeview.bind("<Double-1>", self.on_double_clicked)
+
+    def load_list(self):
+        self.todo_list = FileHandler.load_todo_list()
+
+    def get_calendar(self, year, month):
+        (first_day, last_date) = calendar.monthrange(year, month)
+
+        calendar_matrix = []
+        count = -first_day
+        for i in range(6):
+            calendar_matrix.append([""] * 7)
+
+        for i in range(6):
+            for j in range(7):
+                count += 1
+                if 0 < count <= last_date:
+                    calendar_matrix[i][j] = count
+
+        for todo in self.todo_list:
+            [todo_year, todo_month, todo_day] = todo.date.split("-")
+            if int(todo_year) == year and int(todo_month) == month:
+                # TODO : Add * at date
+                print int(todo_day)
+                pass
+
+        return calendar_matrix
+
+    def draw_calendar(self, year, month):
+        calendar_matrix = self.get_calendar(year, month)
+        self.treeview.delete(*self.treeview.get_children())
+        for week in calendar_matrix:
+            self.treeview.insert('', 'end', values=week)
+
+    def on_double_clicked(self):
+        # TODO : Show this week's todo
+        pass
+
+    def hide_calendar_view(self):
+        self.treeview.pack_forget()
+
+    def show_calendar_view(self):
+        self.treeview.pack()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
