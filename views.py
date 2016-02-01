@@ -6,6 +6,7 @@ from models import *
 import operator
 import tkMessageBox
 import calendar
+from datetime import datetime
 
 
 list_view = None
@@ -19,7 +20,6 @@ class App(Frame):
         master.title("TODO Application")
         frame = Frame(master)
         frame.pack()
-
 
         global list_view, calendar_view
         list_view = ListView(self.master)
@@ -41,21 +41,15 @@ class App(Frame):
         self.is_list_view = False
         self.open_list_view()
 
-
     def open_list_view(self):
         global list_view, calendar_view
         list_view.show_list_view()
         calendar_view.hide_calendar_view()
 
     def open_calendar_view(self):
-        #if self.is_list_view:
         global list_view, calendar_view
         list_view.hide_list_view()
         calendar_view.show_calendar_view()
-
-        # TODO : draw calendar
-        #    self.is_list_view = False
-        pass
 
     def add_todo_callback(self):
         InputDialog(self.master)
@@ -94,6 +88,7 @@ class InputDialog(tkSimpleDialog.Dialog):
         FileHandler.save_todo(new_todo)
         global list_view
         list_view.load_list()
+        calendar_view.load_list()
 
 
 class ListView(Frame):
@@ -159,9 +154,16 @@ class CalendarView(Frame):
     def __init__(self, master):
         self.treeview = Treeview(master, padding=6)
         self.master = master
+        self.year = datetime.now().year
+        self.month = datetime.now().month
+
+        self.prev_button = Button(self.master, text="prev", command=self.prev_callback)
+        title = str(self.year) + "-" + str(self.month)
+        self.title_label = Label(self.master, text=title)
+        self.next_button = Button(self.master, text="next", command=self.next_callback)
+
         self.create_gui()
         self.load_list()
-        self.draw_calendar(2016, 1)
 
     def create_gui(self):
         self.treeview['columns'] = ("mon", 'tue', 'wed', 'thur', 'fri', 'sat', 'sun')
@@ -184,8 +186,25 @@ class CalendarView(Frame):
 
         self.treeview.bind("<Double-1>", self.on_double_clicked)
 
+    def prev_callback(self):
+        self.month -= 1
+        if self.month == 0:
+            self.month = 12
+            self.year -=1
+        self.draw_calendar(self.year, self.month)
+        self.title_label.config(text=str(self.year) + "-" + str(self.month))
+
+    def next_callback(self):
+        self.month += 1
+        if self.month == 13:
+            self.month = 1
+            self.year += 1
+        self.draw_calendar(self.year, self.month)
+        self.title_label.config(text=str(self.year) + "-" + str(self.month))
+
     def load_list(self):
         self.todo_list = FileHandler.load_todo_list()
+        self.draw_calendar(self.year, self.month)
 
     def get_calendar(self, year, month):
         (first_day, last_date) = calendar.monthrange(year, month)
@@ -199,14 +218,15 @@ class CalendarView(Frame):
             for j in range(7):
                 count += 1
                 if 0 < count <= last_date:
-                    calendar_matrix[i][j] = count
+                    calendar_matrix[i][j] = str(count)
 
         for todo in self.todo_list:
             [todo_year, todo_month, todo_day] = todo.date.split("-")
             if int(todo_year) == year and int(todo_month) == month:
                 # TODO : Add * at date
-                print int(todo_day)
-                pass
+                i = (int(todo_day) + first_day - 1) / 7
+                j = (int(todo_day) + first_day - 1) % 7
+                calendar_matrix[i][j] += "*"
 
         return calendar_matrix
 
@@ -216,33 +236,31 @@ class CalendarView(Frame):
         for week in calendar_matrix:
             self.treeview.insert('', 'end', values=week)
 
-    def on_double_clicked(self):
-        # TODO : Show this week's todo
-        pass
+    def on_double_clicked(self, event):
+        clicked_item = self.treeview.focus()
+        clicked_values = self.treeview.item(clicked_item).get('values')
+
+        week_todo_str = ""
+        for value in clicked_values:
+            value = str(value)
+            for todo in self.todo_list:
+                [todo_year, todo_month, todo_day] = todo.date.split("-")
+                if int(todo_year) == self.year and int(todo_month) == self.month \
+                        and int(todo_day) == int(value.replace("*", "")):
+                    week_todo_str += todo.to_string() + "\n"
+
+        print "==== clicked values ==="
+        print clicked_values
+        tkMessageBox.showinfo("This week's TODO", week_todo_str)
 
     def hide_calendar_view(self):
         self.treeview.pack_forget()
 
     def show_calendar_view(self):
-        self.treeview.pack()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.prev_button.pack(side=TOP)
+        self.title_label.pack(side=TOP)
+        self.next_button.pack(side=TOP)
+        self.treeview.pack(side=BOTTOM)
 
 
 
