@@ -1,10 +1,10 @@
-from Tkinter import *
-from ttk import *
-import tkSimpleDialog
+from tkinter import *
+from tkinter.ttk import *
+import tkinter.simpledialog
 from controllers import *
 from models import *
 import operator
-import tkMessageBox
+import tkinter.messagebox
 import calendar
 from datetime import datetime
 
@@ -55,7 +55,7 @@ class App(Frame):
         InputDialog(self.master)
 
 
-class InputDialog(tkSimpleDialog.Dialog):
+class InputDialog(tkinter.simpledialog.Dialog):
     def body(self, master):
         Label(master, text="Date (YYYY-MM-DD) : ").grid(row=0)
         Label(master, text="Start time (HH:MM) : ").grid(row=1)
@@ -134,7 +134,7 @@ class ListView(Frame):
         clicked_values = self.treeview.item(clicked_item).get('values')
         clicked_list = map(lambda x: str(x), clicked_values)
 
-        if tkMessageBox.askyesno("Delete", "Delete this TODO item?"):
+        if tkinter.messagebox.askyesno("Delete", "Delete this TODO item?"):
             for todo in self.todo_list:
                 if clicked_list == todo.to_list():
                     self.todo_list.remove(todo)
@@ -224,7 +224,7 @@ class CalendarView(Frame):
             [todo_year, todo_month, todo_day] = todo.date.split("-")
             if int(todo_year) == year and int(todo_month) == month:
                 # TODO : Add * at date
-                i = (int(todo_day) + first_day - 1) / 7
+                i = int((int(todo_day) + first_day - 1) / 7)
                 j = (int(todo_day) + first_day - 1) % 7
                 calendar_matrix[i][j] += "*"
 
@@ -249,9 +249,7 @@ class CalendarView(Frame):
                         and int(todo_day) == int(value.replace("*", "")):
                     week_todo_str += todo.to_string() + "\n"
 
-        print "==== clicked values ==="
-        print clicked_values
-        tkMessageBox.showinfo("This week's TODO", week_todo_str)
+        tkinter.messagebox.showinfo("This week's TODO", week_todo_str)
 
     def hide_calendar_view(self):
         self.treeview.pack_forget()
